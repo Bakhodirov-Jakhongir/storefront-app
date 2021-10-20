@@ -10,11 +10,15 @@ from . serializers import ProductSerializer
 # Create your views here.
 
 #all products
-@api_view()
+@api_view(['GET' , 'POST'])
 def product_list(request):
-    query_set = Product.objects.select_related('collection')
-    serializer = ProductSerializer(query_set , many=True , context={'request':request})
-    return Response(serializer.data)
+    if request.method == 'GET':
+        query_set = Product.objects.select_related('collection')
+        serializer = ProductSerializer(query_set , many=True , context={'request':request})
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = ProductSerializer(data=request.data)
+        return Response('ok')
 
 #retrieve single product
 @api_view()
