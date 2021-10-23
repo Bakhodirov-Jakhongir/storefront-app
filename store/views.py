@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.request import Request
-from rest_framework import status
+from rest_framework import serializers, status
 from . models import Product
 from . serializers import ProductSerializer
 
@@ -18,15 +18,32 @@ def product_list(request):
         return Response(serializer.data)
     elif request.method == 'POST':
         serializer = ProductSerializer(data=request.data)
-        return Response('ok')
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        print(serializer.validated_data)
+        # serializer.validated_data 
+        return Response(serializer.data , status=status.HTTP_201_CREATED)
+        # if serializer.is_valid():
+        #     return Response('ok')
+        # else:
+        #     return Response(serializer.errors , status=status.HTTP_400_BAD_REQUEST)
 
 #retrieve single product
-@api_view()
+@api_view(['GET' , 'PUT' , 'PATCH'])
 def product_detail(request,id):
         product = get_object_or_404(Product , pk=id)
-        serializer = ProductSerializer(product)
-        return Response(serializer.data)
+        if request.method == 'GET':
+            serializer = ProductSerializer(product)
+            return Response(serializer.data)
+        elif request.method == 'PUT':
+            serializer = ProductSerializer(product , data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data , status=status.HTTP_200_OK)
+             
     
 @api_view()
 def collection_detail(request , pk):
     return Response('ok')
+
+
