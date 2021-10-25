@@ -1,4 +1,4 @@
-import decimal
+from django.db.models.aggregates import Count
 from django.shortcuts import  get_object_or_404
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework import serializers, status
 from rest_framework.views import APIView
-from . models import Product
-from . serializers import ProductSerializer
+from . models import Collection, Product
+from . serializers import ProductSerializer , CollectionSerializer
 
 # Create your views here.
 
@@ -44,8 +44,23 @@ class ProductDetail(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)     
 
     
-@api_view()
-def collection_detail(request , pk):
-    return Response('ok')
+@api_view(['GET', 'PUT', 'DELETE'])
+def collection_list(request, pk):
+    collection = get_object_or_404(
+        Collection.objects.annotate(
+            products_count=Count('products')), pk=pk)
+    if request.method == 'GET':
+        serializer = CollectionSerializer(collection)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = CollectionSerializer(collection, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    elif request.method == 'DELETE':
+        if collection.products.count() > 0:
+            return Response({'error': 'Collection cannot be deleted because it includes one or more products.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        collection.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
